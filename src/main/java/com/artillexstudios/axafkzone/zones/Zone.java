@@ -300,23 +300,13 @@ public class Zone {
                 .toList());
             settings.set("zone.minY", polygonRegion.getMinY());
             settings.set("zone.maxY", polygonRegion.getMaxY());
-            
-            // Clear old cuboid settings if they exist
-            settings.set("zone.location1", null);
-            settings.set("zone.location2", null);
+            settings.save();
         } else {
             // Save cuboid region
-            settings.set("zone.type", "cuboid");
             settings.set("zone.location1", Serializers.LOCATION.serialize(region.getCorner1()));
             settings.set("zone.location2", Serializers.LOCATION.serialize(region.getCorner2()));
-            
-            // Clear old polygon settings if they exist
-            settings.set("zone.points", null);
-            settings.set("zone.minY", null);
-            settings.set("zone.maxY", null);
+            settings.save();
         }
-        
-        settings.save();
     }
 
     public String getName() {

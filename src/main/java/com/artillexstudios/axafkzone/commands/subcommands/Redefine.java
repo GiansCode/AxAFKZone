@@ -5,7 +5,6 @@ import com.artillexstudios.axafkzone.selection.PolygonRegion;
 import com.artillexstudios.axafkzone.selection.Region;
 import com.artillexstudios.axafkzone.selection.Selection;
 import com.artillexstudios.axafkzone.zones.Zone;
-import com.artillexstudios.axapi.serializers.Serializers;
 import org.bukkit.entity.Player;
 
 import java.util.Collections;
@@ -42,15 +41,6 @@ public enum Redefine {
                 .orElse(256);
             
             newRegion = new PolygonRegion(sel.getPolygonPoints(), minY, maxY, zone);
-            
-            // Update config
-            zone.getSettings().set("zone.type", "polygon");
-            zone.getSettings().set("zone.points", sel.getPolygonPoints().stream()
-                .map(Serializers.LOCATION::serialize)
-                .toList());
-            zone.getSettings().set("zone.minY", minY);
-            zone.getSettings().set("zone.maxY", maxY);
-            zone.getSettings().save();
         } else {
             if (sel.getPosition1() == null || sel.getPosition2() == null || !Objects.equals(sel.getPosition1().getWorld(), sel.getPosition2().getWorld())) {
                 MESSAGEUTILS.sendLang(sender, "selection.no-selection", Collections.singletonMap("%name%", zone.getName()));
