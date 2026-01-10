@@ -28,9 +28,18 @@ public enum Create {
         }
 
         Selection sel = WandListeners.getSelections().remove(sender);
-        if (sel.getPosition1() == null || sel.getPosition2() == null || !Objects.equals(sel.getPosition1().getWorld(), sel.getPosition2().getWorld())) {
-            MESSAGEUTILS.sendLang(sender, "selection.no-selection", Collections.singletonMap("%name%", name));
-            return;
+        
+        // Validate selection based on mode
+        if (sel.getMode() == Selection.SelectionMode.POLYGON) {
+            if (!sel.isPolygonComplete()) {
+                MESSAGEUTILS.sendLang(sender, "selection.polygon-incomplete", Collections.singletonMap("%name%", name));
+                return;
+            }
+        } else {
+            if (sel.getPosition1() == null || sel.getPosition2() == null || !Objects.equals(sel.getPosition1().getWorld(), sel.getPosition2().getWorld())) {
+                MESSAGEUTILS.sendLang(sender, "selection.no-selection", Collections.singletonMap("%name%", name));
+                return;
+            }
         }
 
         FileUtils.create(name, sel);

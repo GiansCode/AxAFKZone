@@ -3,6 +3,7 @@ package com.artillexstudios.axafkzone.commands;
 import com.artillexstudios.axafkzone.commands.subcommands.Create;
 import com.artillexstudios.axafkzone.commands.subcommands.Delete;
 import com.artillexstudios.axafkzone.commands.subcommands.Help;
+import com.artillexstudios.axafkzone.commands.subcommands.Mode;
 import com.artillexstudios.axafkzone.commands.subcommands.Redefine;
 import com.artillexstudios.axafkzone.commands.subcommands.Reload;
 import com.artillexstudios.axafkzone.commands.subcommands.Teleport;
@@ -28,6 +29,11 @@ public class Commands implements OrphanCommand {
     @Subcommand("wand")
     public void wand(Player sender) {
         Wand.INSTANCE.execute(sender);
+    }
+
+    @Subcommand("mode")
+    public void mode(Player sender, String mode) {
+        Mode.INSTANCE.execute(sender, mode);
     }
 
     @Subcommand("create")

@@ -1,6 +1,7 @@
 package com.artillexstudios.axafkzone.zones;
 
 import com.artillexstudios.axafkzone.reward.Reward;
+import com.artillexstudios.axafkzone.selection.PolygonRegion;
 import com.artillexstudios.axafkzone.selection.Region;
 import com.artillexstudios.axafkzone.utils.RandomUtils;
 import com.artillexstudios.axafkzone.utils.TimeUtils;
@@ -16,6 +17,7 @@ import com.artillexstudios.axapi.utils.MessageUtils;
 import com.artillexstudios.axapi.utils.StringUtils;
 import com.artillexstudios.axapi.utils.Title;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 import java.net.InetSocketAddress;
@@ -28,6 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static com.artillexstudios.axafkzone.AxAFKZone.CONFIG;
 import static com.artillexstudios.axafkzone.AxAFKZone.MESSAGEUTILS;
@@ -236,11 +239,37 @@ public class Zone {
     public boolean reload() {
         if (!settings.reload()) return false;
 
-        this.region = new Region(
+        // Determine region type
+        String regionType = settings.getString("zone.type", "cuboid");
+        
+        if (regionType.equalsIgnoreCase("polygon")) {
+            // Load polygon region
+            List<String> pointStrings = settings.getStringList("zone.points");
+            if (pointStrings != null && !pointStrings.isEmpty()) {
+                List<Location> points = pointStrings.stream()
+                    .map(Serializers.LOCATION::deserialize)
+                    .collect(Collectors.toList());
+                
+                int minY = settings.getInt("zone.minY", 0);
+                int maxY = settings.getInt("zone.maxY", 256);
+                
+                this.region = new PolygonRegion(points, minY, maxY, this);
+            } else {
+                // Fallback to cuboid if points are missing
+                this.region = new Region(
+                    Serializers.LOCATION.deserialize(settings.getString("zone.location1")),
+                    Serializers.LOCATION.deserialize(settings.getString("zone.location2")),
+                    this
+                );
+            }
+        } else {
+            // Load cuboid region (default)
+            this.region = new Region(
                 Serializers.LOCATION.deserialize(settings.getString("zone.location1")),
                 Serializers.LOCATION.deserialize(settings.getString("zone.location2")),
                 this
-        );
+            );
+        }
 
         this.rewardSeconds = settings.getInt("reward-time-seconds", 180);
         this.rollAmount = settings.getInt("roll-amount", 1);
@@ -262,8 +291,31 @@ public class Zone {
 
     public void setRegion(Region region) {
         this.region = region;
-        settings.set("zone.location1", Serializers.LOCATION.serialize(region.getCorner1()));
-        settings.set("zone.location2", Serializers.LOCATION.serialize(region.getCorner2()));
+        
+        if (region instanceof PolygonRegion polygonRegion) {
+            // Save polygon region
+            settings.set("zone.type", "polygon");
+            settings.set("zone.points", polygonRegion.getPoints().stream()
+                .map(Serializers.LOCATION::serialize)
+                .toList());
+            settings.set("zone.minY", polygonRegion.getMinY());
+            settings.set("zone.maxY", polygonRegion.getMaxY());
+            
+            // Clear old cuboid settings if they exist
+            settings.set("zone.location1", null);
+            settings.set("zone.location2", null);
+        } else {
+            // Save cuboid region
+            settings.set("zone.type", "cuboid");
+            settings.set("zone.location1", Serializers.LOCATION.serialize(region.getCorner1()));
+            settings.set("zone.location2", Serializers.LOCATION.serialize(region.getCorner2()));
+            
+            // Clear old polygon settings if they exist
+            settings.set("zone.points", null);
+            settings.set("zone.minY", null);
+            settings.set("zone.maxY", null);
+        }
+        
         settings.save();
     }
 

@@ -39,10 +39,24 @@ public class WandListeners implements Listener {
         if (!wrapper.getBooleanOr("axafkzone-wand", false)) return;
         event.setCancelled(true);
 
+        if (!selections.containsKey(event.getPlayer())) {
+            selections.put(event.getPlayer(), new Selection(event.getPlayer()));
+        }
+        
+        Selection selection = selections.get(event.getPlayer());
+
         if (event.getAction().equals(Action.LEFT_CLICK_BLOCK)) {
-            onLeftClick(event.getPlayer(), event.getClickedBlock().getLocation());
+            if (selection.getMode() == Selection.SelectionMode.POLYGON) {
+                onPolygonLeftClick(event.getPlayer(), event.getClickedBlock().getLocation());
+            } else {
+                onLeftClick(event.getPlayer(), event.getClickedBlock().getLocation());
+            }
         } else if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
-            onRightClick(event.getPlayer(), event.getClickedBlock().getLocation());
+            if (selection.getMode() == Selection.SelectionMode.POLYGON) {
+                onPolygonRightClick(event.getPlayer(), event.getClickedBlock().getLocation());
+            } else {
+                onRightClick(event.getPlayer(), event.getClickedBlock().getLocation());
+            }
         }
     }
 
@@ -62,5 +76,48 @@ public class WandListeners implements Listener {
         player.setCooldown(player.getInventory().getItemInMainHand().getType(), 5);
         selections.get(player).setPosition2(location);
         MESSAGEUTILS.sendLang(player, "selection.pos2", Collections.singletonMap("%location%", Serializers.LOCATION.serialize(location)));
+    }
+
+    private void onPolygonLeftClick(@NotNull Player player, @NotNull Location location) {
+        Selection selection = selections.get(player);
+        player.setCooldown(player.getInventory().getItemInMainHand().getType(), 5);
+
+        // Check if clicking on the first point to complete the polygon
+        if (selection.isNearFirstPoint(location)) {
+            MESSAGEUTILS.sendLang(player, "selection.polygon-complete", 
+                Collections.singletonMap("%points%", String.valueOf(selection.getPolygonPointCount())));
+            return;
+        }
+
+        // Add new point
+        selection.addPolygonPoint(location);
+        MESSAGEUTILS.sendLang(player, "selection.polygon-point", 
+            new java.util.HashMap<String, String>() {{
+                put("%point%", String.valueOf(selection.getPolygonPointCount()));
+                put("%location%", Serializers.LOCATION.serialize(location));
+            }});
+
+        // Show hint about completing if we have enough points
+        if (selection.getPolygonPointCount() >= 3 && selection.getFirstPolygonPoint() != null) {
+            MESSAGEUTILS.sendLang(player, "selection.polygon-hint");
+        }
+    }
+
+    private void onPolygonRightClick(@NotNull Player player, @NotNull Location location) {
+        Selection selection = selections.get(player);
+        player.setCooldown(player.getInventory().getItemInMainHand().getType(), 5);
+
+        // Right click removes the last point
+        if (selection.getPolygonPointCount() > 0) {
+            boolean removed = selection.removeLastPolygonPoint();
+            if (removed) {
+                if (selection.getPolygonPointCount() == 0) {
+                    MESSAGEUTILS.sendLang(player, "selection.polygon-reset");
+                } else {
+                    MESSAGEUTILS.sendLang(player, "selection.polygon-point-removed", 
+                        Collections.singletonMap("%points%", String.valueOf(selection.getPolygonPointCount())));
+                }
+            }
+        }
     }
 }

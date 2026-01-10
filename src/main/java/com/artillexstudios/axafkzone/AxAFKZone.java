@@ -3,6 +3,7 @@ package com.artillexstudios.axafkzone;
 import com.artillexstudios.axafkzone.commands.CommandManager;
 import com.artillexstudios.axafkzone.listeners.WandListeners;
 import com.artillexstudios.axafkzone.listeners.WorldListeners;
+import com.artillexstudios.axafkzone.schedulers.PolygonVisualizer;
 import com.artillexstudios.axafkzone.schedulers.TickZones;
 import com.artillexstudios.axafkzone.utils.FileUtils;
 import com.artillexstudios.axafkzone.utils.NumberUtils;
@@ -50,6 +51,7 @@ public final class AxAFKZone extends AxPlugin {
 
         NumberUtils.reload();
         TickZones.start();
+        PolygonVisualizer.start();
 
         MESSAGEUTILS = new MessageUtils(LANG.getBackingDocument(), "prefix", CONFIG.getBackingDocument());
 
@@ -74,6 +76,7 @@ public final class AxAFKZone extends AxPlugin {
     public void disable() {
         if (metrics != null) metrics.cancel();
         TickZones.stop();
+        PolygonVisualizer.stop();
         for (Zone zone : Zones.getZones().values()) {
             zone.disable();
         }
