@@ -183,7 +183,7 @@ public class Zone {
 
         int barDirection = CONFIG.getInt("bossbar-direction", 0);
         float calculated = (float) (time % rewardSeconds) / (rewardSeconds - 1);
-        bossBar.progress(Math.max(0f, Math.min(1f, barDirection == 0 ? 1f - calculated : calculated)));
+        bossBar.progress(Math.clamp(barDirection == 0 ? 1f - calculated : calculated, 0f, 1f));
 
         Section section;
         if ((section = settings.getSection("in-zone.bossbar")) != null) {
@@ -192,10 +192,11 @@ public class Zone {
     }
 
     private void giveRewards(Player player, int newTime) {
-        final List<Reward> rewardList = rollAndGiveRewards(player);
+        List<Reward> rewardList = rollAndGiveRewards(player);
+        if (rewardList.isEmpty()) return;
         if (settings.getStringList("messages.reward").isEmpty()) return;
 
-        final String prefix = CONFIG.getString("prefix");
+        String prefix = CONFIG.getString("prefix");
         boolean first = true;
         for (String string : settings.getStringList("messages.reward")) {
             if (first) {
@@ -220,12 +221,19 @@ public class Zone {
     }
 
     public List<Reward> rollAndGiveRewards(Player player) {
-        final List<Reward> rewardList = new ArrayList<>();
+        List<Reward> rewardList = new ArrayList<>();
         if (rewards.isEmpty()) return rewardList;
-        final HashMap<Reward, Double> chances = new HashMap<>();
+
+        int time = zonePlayers.getOrDefault(player, 0);
+        Map<Reward, Double> chances = new HashMap<>();
         for (Reward reward : rewards) {
+            String permission = reward.getPermission();
+            if (permission != null && !permission.isBlank() && !player.hasPermission(permission)) continue;
+            if (time < reward.getMinimumTime()) continue;
+            if (time > reward.getMaximumTime()) continue;
             chances.put(reward, reward.getChance());
         }
+        if (chances.isEmpty()) return rewardList;
 
         for (int i = 0; i < rollAmount; i++) {
             Reward sel = RandomUtils.randomValue(chances);
@@ -302,7 +310,7 @@ public class Zone {
             settings.set("zone.maxY", polygonRegion.getMaxY());
             settings.save();
         } else {
-            // Save cuboid region
+            settings.set("zone.type", "cuboid");
             settings.set("zone.location1", Serializers.LOCATION.serialize(region.getCorner1()));
             settings.set("zone.location2", Serializers.LOCATION.serialize(region.getCorner2()));
             settings.save();

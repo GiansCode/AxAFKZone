@@ -37,6 +37,11 @@ roll-amount: 3
 # you can add as many rewards as you would like
 rewards:
   - chance: 50.0
+    # optional: reward permission, set to "" or remove to disable
+    permission: ""
+    # optional: time spent in the afk zone required to get this reward, in seconds
+    minimum-time: 0
+    maximum-time: 100000
     display: "&#AAAAAA1x Iron Ingot"
     commands:
       - "give %player% iron_ingot 1"

@@ -16,21 +16,20 @@ public enum Redefine {
     INSTANCE;
 
     public void execute(Player sender, Zone zone) {
-        if (!WandListeners.getSelections().containsKey(sender)) {
+        Selection sel = WandListeners.getSelections().remove(sender);
+        if (sel == null) {
             MESSAGEUTILS.sendLang(sender, "selection.no-selection", Collections.singletonMap("%name%", zone.getName()));
             return;
         }
 
-        final Selection sel = WandListeners.getSelections().remove(sender);
-
         Region newRegion;
         if (sel.getMode() == Selection.SelectionMode.POLYGON) {
             if (!sel.isPolygonComplete()) {
+                WandListeners.getSelections().put(sender, sel);
                 MESSAGEUTILS.sendLang(sender, "selection.polygon-incomplete", Collections.singletonMap("%name%", zone.getName()));
                 return;
             }
-            
-            // Calculate Y bounds from polygon points
+
             int minY = sel.getPolygonPoints().stream()
                 .mapToInt(loc -> loc.getBlockY())
                 .min()
@@ -39,14 +38,15 @@ public enum Redefine {
                 .mapToInt(loc -> loc.getBlockY())
                 .max()
                 .orElse(256);
-            
+
             newRegion = new PolygonRegion(sel.getPolygonPoints(), minY, maxY, zone);
         } else {
             if (sel.getPosition1() == null || sel.getPosition2() == null || !Objects.equals(sel.getPosition1().getWorld(), sel.getPosition2().getWorld())) {
+                WandListeners.getSelections().put(sender, sel);
                 MESSAGEUTILS.sendLang(sender, "selection.no-selection", Collections.singletonMap("%name%", zone.getName()));
                 return;
             }
-            
+
             newRegion = new Region(sel.getPosition1(), sel.getPosition2(), zone);
         }
 

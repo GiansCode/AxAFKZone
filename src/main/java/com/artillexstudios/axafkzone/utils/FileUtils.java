@@ -32,16 +32,14 @@ public class FileUtils {
     }
 
     public static void create(String zoneName, Selection selection) {
-        final Config config = new Config(new File(AxAFKZone.getInstance().getDataFolder(), "zones/" + zoneName + ".yml"), AxAFKZone.getInstance().getResource("zones/example-zone.yml"));
-        
+        Config config = new Config(new File(AxAFKZone.getInstance().getDataFolder(), "zones/" + zoneName + ".yml"), AxAFKZone.getInstance().getResource("zones/example-zone.yml"));
+
         if (selection.getMode() == Selection.SelectionMode.POLYGON) {
-            // Save as polygon
             config.set("zone.type", "polygon");
             config.set("zone.points", selection.getPolygonPoints().stream()
                 .map(Serializers.LOCATION::serialize)
                 .toList());
-            
-            // Calculate Y bounds from polygon points
+
             int minY = selection.getPolygonPoints().stream()
                 .mapToInt(loc -> loc.getBlockY())
                 .min()
@@ -50,16 +48,15 @@ public class FileUtils {
                 .mapToInt(loc -> loc.getBlockY())
                 .max()
                 .orElse(256);
-            
+
             config.set("zone.minY", minY);
             config.set("zone.maxY", maxY);
         } else {
-            // Save as cuboid
             config.set("zone.type", "cuboid");
             config.set("zone.location1", Serializers.LOCATION.serialize(selection.getPosition1()));
             config.set("zone.location2", Serializers.LOCATION.serialize(selection.getPosition2()));
         }
-        
+
         config.save();
         load(zoneName);
     }
